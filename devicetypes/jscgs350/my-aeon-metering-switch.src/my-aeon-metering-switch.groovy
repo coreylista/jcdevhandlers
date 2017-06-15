@@ -31,6 +31,7 @@
  *  03-24-2017 : Changed color schema to match ST's new format.
  *  03-26-2017 : Added a new device Preference that allows for selecting how many decimal positions should be used to display for WATTS and kWh.  What's stored for the actual meter reading that's seen in the IDE for Power, and what's sent to SmartApps, did not change.
  *  05-28-2017 : Sometimes the HEM will send a super low reading, like 0.04672386; which in that case the decimal position setting would not get applied if you used 3.  I fixed that.
+ *  06-12-2017 : Updated code to make sure kWh or kVAh readings from the reader are larger that the previous reading.  There should never be a smaller reading from the previous reading.
  *
  */
 metadata {
@@ -216,7 +217,7 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
     def timeString = new Date().format("MM-dd-yy h:mm a", location.timeZone)
 	if (cmd.scale == 0) {
         newValue = cmd.scaledMeterValue
-        if (newValue != state.energyValue) {
+        if (newValue > state.energyValue) {
             dispValue = newValue
             if (decimalPositions == 3) {
             	def decimalDisplay = String.format("%3.3f",newValue)
@@ -245,7 +246,7 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 		}
 	} else if (cmd.scale == 1) {
         newValue = cmd.scaledMeterValue
-        if (newValue != state.energyValue) {
+        if (newValue > state.energyValue) {
             dispValue = newValue+"\nkVAh"
             sendEvent(name: "energyDisp", value: dispValue as String, unit: "", displayed: false)
             state.energyValue = newValue
@@ -384,6 +385,7 @@ def resetenergy() {
     sendEvent(name: "energyOne", value: "Energy Data (kWh/Cost) Reset On:\n"+timeString, unit: "")       
     sendEvent(name: "energyDisp", value: "", unit: "")
     sendEvent(name: "energyTwo", value: "Cost\n--", unit: "")
+    state.energyValue = 0
     def cmd = delayBetween( [
         zwave.meterV2.meterReset().format(),
         zwave.meterV2.meterGet(scale: 0).format()
@@ -394,6 +396,7 @@ def resetenergy() {
 def resetMeter() {
 	log.debug "Resetting all metering switch values..."
     state.powerHigh = 0
+    state.energyValue = 0
     sendEvent(name: "powerOne", value: "", unit: "")
 	sendEvent(name: "powerTwo", value: "", unit: "")
     sendEvent(name: "energyDisp", value: "", unit: "")
