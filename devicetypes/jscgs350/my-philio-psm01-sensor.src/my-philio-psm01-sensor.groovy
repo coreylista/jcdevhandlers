@@ -22,6 +22,7 @@
  *  08-27-2016 : Modified the device handler for my liking, primarly for looks and feel.
  *  02-11-2017 : Put battery info into the main tile instead of a separate tile.
  *  03-24-2017 : Changed color schema to match ST's new format.
+ *  07-21-2017 : Changed Primary tile for my liking.
  *
  */ 
 metadata {
@@ -41,26 +42,26 @@ metadata {
 	}
 
 	tiles(scale: 2) {
-		multiAttributeTile(name:"contact", type: "generic", width: 6, height: 4){
-			tileAttribute ("device.contact", key: "PRIMARY_CONTROL") {
-				attributeState "open", label:'open', icon:"st.contact.contact.open", backgroundColor:"#e86d13"
-				attributeState "closed", label:'closed', icon:"st.contact.contact.closed", backgroundColor:"#00A0DC"
+		multiAttributeTile(name: "temperature", type: "generic", width: 6, height: 4) {
+			tileAttribute("device.temperature", key: "PRIMARY_CONTROL") {
+				attributeState "temperature", icon:"st.Weather.weather2", label: '${currentValue}°',
+						backgroundColors: [
+								[value: 31, color: "#153591"],
+								[value: 44, color: "#1e9cbb"],
+								[value: 59, color: "#90d2a7"],
+								[value: 74, color: "#44b621"],
+								[value: 84, color: "#f1d801"],
+								[value: 95, color: "#d04e00"],
+								[value: 96, color: "#bc2323"]
+						]
 			}
             tileAttribute ("device.battery", key: "SECONDARY_CONTROL") {
                 attributeState("default", label:'${currentValue}% battery', icon: "https://raw.githubusercontent.com/constjs/jcdevhandlers/master/img/battery-icon-614x460.png")
             }
 		}
-		valueTile("temperature", "device.temperature", inactiveLabel: false, width: 2, height: 2) {
-			state "temperature", label:'${currentValue}°',
-			backgroundColors:[
-				[value: 31, color: "#153591"],
-				[value: 44, color: "#1e9cbb"],
-				[value: 59, color: "#90d2a7"],
-				[value: 74, color: "#44b621"],
-				[value: 84, color: "#f1d801"],
-				[value: 95, color: "#d04e00"],
-				[value: 96, color: "#bc2323"]
-			]
+		standardTile("contact", "device.contact", width: 2, height: 2) {
+			state "open", label: '${name}', icon: "st.contact.contact.open", backgroundColor: "#e86d13"
+			state "closed", label: '${name}', icon: "st.contact.contact.closed", backgroundColor: "#00A0DC"
 		}
 		standardTile("illuminance", "device.illuminance", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
 			state "luminosity", label:'${currentValue} ${unit}', unit:"lux", icon:"st.illuminance.illuminance.bright"
@@ -69,8 +70,8 @@ metadata {
 			state "configure", label:'', action:"configuration.configure", icon:"st.secondary.configure"
 		}
 
-		main(["contact", "temperature", "illuminance"])
-		details(["contact", "temperature", "illuminance", "configure"])
+		main(["temperature"])
+		details(["temperature", "contact", "illuminance", "configure"])
 	}
 }
 
