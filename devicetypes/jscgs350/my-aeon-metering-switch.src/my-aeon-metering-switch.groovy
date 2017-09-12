@@ -32,6 +32,7 @@
  *  03-26-2017 : Added a new device Preference that allows for selecting how many decimal positions should be used to display for WATTS and kWh.  What's stored for the actual meter reading that's seen in the IDE for Power, and what's sent to SmartApps, did not change.
  *  05-28-2017 : Sometimes the HEM will send a super low reading, like 0.04672386; which in that case the decimal position setting would not get applied if you used 3.  I fixed that.
  *  06-12-2017 : Updated code to make sure kWh or kVAh readings from the reader are larger that the previous reading.  There should never be a smaller reading from the previous reading.
+ *  09-06-2017 : Removed fingerprint.  Checking to see if this helps in joining the device since it doesn't have to go through all the configuration steps when included.
  *
  */
 metadata {
@@ -40,6 +41,7 @@ metadata {
 		capability "Energy Meter"
 		capability "Actuator"
 		capability "Switch"
+        capability "Outlet"
 		capability "Power Meter"
 		capability "Polling"
 		capability "Refresh"
@@ -60,7 +62,7 @@ metadata {
         command "configure"
         command "resetMeter"
         
-		fingerprint inClusters: "0x25,0x32"
+//		fingerprint inClusters: "0x25,0x32"
 	}
 
     preferences {
@@ -134,7 +136,7 @@ metadata {
 // Watts row
 
         valueTile("powerDisp", "device.powerDisp", width: 3, height: 2, inactiveLabel: false, decoration: "flat") {
-            state ("default", icon: "st.secondary.activity", label:'Now ${currentValue}W')
+            state ("default", icon: "st.secondary.activity", label:'${currentValue}W')
         }
         standardTile("powerOne", "device.powerOne", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
             state("default", label:'Low ${currentValue}')
