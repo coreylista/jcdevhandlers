@@ -22,6 +22,9 @@
  *  03-11-2017 : Changed from valueTile to standardTile for a few tiles since ST's mobile app v2.3.x changed something between the two.
  *  04-08-2017 : Updated the updated() section to call configuration().
  *  05-18-2017 : Changed the main tile to be contact instead of switch primarily due to personal functionality preference and not accidentally actuating the valve while in the Room view.
+ *  09-23-2017 : Changed layout to look like my Zooz DTH, cleaned up code a lot.
+ *  10-03-2017 : Cosmetic changes and fixed messages section.
+ *  10-07-2017 : Changed history tile from standard to value to resolve iOS rendering issue.
  *
  */
 metadata {
@@ -38,8 +41,7 @@ metadata {
         capability "Health Check"
         
         attribute "powered", "string"
-        attribute "valveState", "string"
-        
+        attribute "valveState", "string"       
 }
 
     // UI tile definitions
@@ -47,7 +49,7 @@ metadata {
 		multiAttributeTile(name:"switch", type: "generic", width: 6, height: 4, canChangeIcon: true, decoration: "flat"){
 			tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
 				attributeState "on", label: 'Closed', action: "switch.off", icon: "st.valves.water.closed", backgroundColor: "#ff0000", nextState:"openingvalve"
-				attributeState "off", label: 'Open', action: "switch.on", icon: "st.valves.water.open", backgroundColor: "#53a7c0", nextState:"closingvalve"
+				attributeState "off", label: 'Open', action: "switch.on", icon: "st.valves.water.open", backgroundColor: "#51afdb", nextState:"closingvalve"
 				attributeState "closingvalve", label:'Closing', icon:"st.valves.water.closed", backgroundColor:"#f0b823"
 				attributeState "openingvalve", label:'Opening', icon:"st.valves.water.open", backgroundColor:"#f0b823"
 			}
@@ -56,7 +58,7 @@ metadata {
             }
         }
         standardTile("contact", "device.contact", width: 3, height: 2, inactiveLabel: false) {
-            state "open", label: 'Open', icon: "st.valves.water.open", backgroundColor: "#53a7c0"
+            state "open", label: 'Open', icon: "st.valves.water.open", backgroundColor: "#51afdb"
             state "closed", label: 'Closed', icon: "st.valves.water.closed", backgroundColor: "#ff0000"
         }
         standardTile("powered", "device.powered", width: 2, height: 2, inactiveLabel: false) {
@@ -75,8 +77,11 @@ metadata {
         standardTile("statusText", "statusText", inactiveLabel: false, decoration: "flat", width: 5, height: 1) {
 			state "statusText", label:'${currentValue}', backgroundColor:"#ffffff"
 		}
+		valueTile("history", "device.history", decoration:"flat",width: 6, height: 2) {
+			state "history", label:'${currentValue}'
+		}
         main (["contact"])
-        details(["switch", "blankTile", "statusText", "powered", "refresh", "configure"])
+        details(["switch", "history", "powered", "refresh", "configure"])
     }
 }
 
@@ -87,7 +92,6 @@ def updated(){
 }
 
 def parse(String description) {
-
     def result = null
     def cmd = zwave.parse(description, [0x72: 1, 0x86: 1, 0x71: 1, 0x30: 1, 0x31: 3, 0x35: 1, 0x70: 1, 0x85: 1, 0x25: 1, 0x03: 1, 0x20: 1, 0x84: 1])
 	log.debug cmd
@@ -101,13 +105,10 @@ def parse(String description) {
 	if (cmd) {
         result = createEvent(zwaveEvent(cmd))
     }
-    
-    def statusTextmsg = ""
     def timeString = new Date().format("MM-dd-yy h:mm a", location.timeZone)
+    def statusTextmsg = ""
     statusTextmsg = "Last refreshed at "+timeString+"."
     sendEvent(name:"statusText", value:statusTextmsg)
-    log.debug statusTextmsg
-
     return result
 }
 
@@ -195,13 +196,7 @@ def open() {
 }
 
 def poll() {
-	log.debug "Executing Poll for Main Water Valve"
-	delayBetween([
-		zwave.switchBinaryV1.switchBinaryGet().format(),
-		zwave.sensorBinaryV1.sensorBinaryGet().format(),
-        zwave.basicV1.basicGet().format(),
-		zwave.alarmV1.alarmGet().format() 
-	],100)
+	refresh()
 }
 
 // PING is used by Device-Watch in attempt to reach the Device
@@ -211,6 +206,13 @@ def ping() {
 
 def refresh() {
 	log.debug "Executing Refresh for Main Water Valve per user request"
+    def historyDisp = ""
+    def statusTextmsg = ""
+    def timeString = new Date().format("MM-dd-yy h:mm a", location.timeZone)
+    statusTextmsg = "Last refreshed at "+timeString+"."
+    sendEvent(name:"statusText", value:statusTextmsg)
+    historyDisp = "Important Device Messages\n-------------------------------------------------------------------\n${device.currentState('statusText')?.value}"
+    sendEvent(name: "history", value: historyDisp, displayed: false)
 	delayBetween([
 		zwave.switchBinaryV1.switchBinaryGet().format(),
 		zwave.sensorBinaryV1.sensorBinaryGet().format(),
